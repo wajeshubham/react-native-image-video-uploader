@@ -9,7 +9,7 @@ export const signUp = data => async dispatch => {
     type: SET_LOADER,
     payload: true,
   });
-  auth()
+  return await auth()
     .createUserWithEmailAndPassword(email, password)
     .then(data => {
       console.log('User creation was succes');
@@ -28,15 +28,13 @@ export const signUp = data => async dispatch => {
         })
         .then(() => console.log('Data set success'))
         .catch(e => console.log(e, 'error'));
-      dispatch({
-        type: SET_LOADER,
-        payload: false,
-      });
+
       Snackbar.show({
         text: 'Account created successfully!',
         textColor: 'white',
         backgroundColor: 'green',
       });
+      return {success: true, error: null};
     })
     .catch(error => {
       dispatch({
@@ -65,6 +63,7 @@ export const signUp = data => async dispatch => {
           backgroundColor: 'red',
         });
       }
+      return {success: null, error: true};
     });
 };
 
@@ -74,7 +73,7 @@ export const signIn = data => async dispatch => {
     type: SET_LOADER,
     payload: true,
   });
-  auth()
+  return await auth()
     .signInWithEmailAndPassword(email, password)
     .then(() => {
       console.log('Signin success');
@@ -83,10 +82,8 @@ export const signIn = data => async dispatch => {
         textColor: 'white',
         backgroundColor: 'green',
       });
-      dispatch({
-        type: SET_LOADER,
-        payload: false,
-      });
+
+      return {success: true, error: null};
     })
     .catch(error => {
       console.log(error);
@@ -99,11 +96,12 @@ export const signIn = data => async dispatch => {
         type: SET_LOADER,
         payload: false,
       });
+      return {success: null, error: true};
     });
 };
 
 export const signOut = () => async dispatch => {
-  auth()
+  return await auth()
     .signOut()
     .then(() => {
       console.log('sign out successfull.');

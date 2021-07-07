@@ -18,11 +18,9 @@ const CustomHeader = ({navigation, authState, signOut}) => {
       }}>
       <Left>
         {navigation.canGoBack() ? (
-          <Icon
-            name="arrow-back"
-            onPress={() => navigation.goBack()}
-            style={{color: '#fff'}}
-          />
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" style={{color: '#fff'}} />
+          </TouchableOpacity>
         ) : (
           <Image source={logo} style={styles.headerImage} />
         )}
@@ -35,7 +33,7 @@ const CustomHeader = ({navigation, authState, signOut}) => {
             </TouchableOpacity>
           </>
         ) : (
-          <H3 style={{color: '#fff'}}>LCO</H3>
+          <H3 style={{color: '#fff'}}>Pic Bucket</H3>
         )}
       </Right>
     </Header>

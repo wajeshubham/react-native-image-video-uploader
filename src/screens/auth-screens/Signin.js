@@ -3,16 +3,19 @@ import {StyleSheet, ScrollView, Image, TouchableOpacity} from 'react-native';
 import Snackbar from 'react-native-snackbar';
 
 import {Container, Form, Item, Input, Text, Button, H3} from 'native-base';
-import logo from '../assets/logo-white.png';
+import logo from '../../assets/logo-white.png';
 import propTypes from 'prop-types';
-import {connect} from 'react-redux';
-import {signIn} from '../action/auth';
+import {connect, useDispatch} from 'react-redux';
+import {signIn} from '../../action/auth';
+import {SET_LOADER} from '../../action/action.types';
 
 const SignIn = ({navigation, signIn}) => {
+  const dispatch = useDispatch();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const doSignIn = () => {
+  const doSignIn = async () => {
     if (!email || !password) {
       Snackbar.show({
         text: 'Please provide all the fields.',
@@ -20,7 +23,13 @@ const SignIn = ({navigation, signIn}) => {
         backgroundColor: 'red',
       });
     } else {
-      signIn({email, password});
+      let res = await signIn({email, password});
+      if (res.success) {
+        dispatch({
+          type: SET_LOADER,
+          payload: false,
+        });
+      }
     }
   };
 
@@ -28,7 +37,7 @@ const SignIn = ({navigation, signIn}) => {
     <Container style={styles.container}>
       <ScrollView contentContainerStyle={{flexGrow: 1}}>
         <Image source={logo} style={styles.image} resizeMode="contain" />
-        <H3 style={styles.heading}>Welcome user</H3>
+        <H3 style={styles.heading}>Welcome to Pic Bucket</H3>
         <Form>
           <Item rounded style={styles.formItem}>
             <Input

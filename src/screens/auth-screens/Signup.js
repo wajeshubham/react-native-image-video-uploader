@@ -12,12 +12,15 @@ import {
   H3,
   Spinner,
 } from 'native-base';
-import logo from '../assets/logo-white.png';
+import logo from '../../assets/logo-white.png';
 import propTypes from 'prop-types';
-import {connect} from 'react-redux';
-import {signUp} from '../action/auth';
+import {connect, useDispatch} from 'react-redux';
+import {signUp} from '../../action/auth';
+import {SET_LOADER} from '../../action/action.types';
 
 const SignUp = ({navigation, signUp}) => {
+  const dispatch = useDispatch();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -45,7 +48,13 @@ const SignUp = ({navigation, signUp}) => {
         backgroundColor: 'red',
       });
     } else {
-      await signUp({email, password});
+      let res = await signUp({email, password});
+      if (res.success) {
+        dispatch({
+          type: SET_LOADER,
+          payload: false,
+        });
+      }
       setSignUpLoader(false);
     }
   };
@@ -54,7 +63,7 @@ const SignUp = ({navigation, signUp}) => {
     <Container style={styles.container}>
       <ScrollView contentContainerStyle={{flexGrow: 1}}>
         <Image source={logo} style={styles.image} resizeMode="contain" />
-        <H3 style={styles.heading}>Welcome user</H3>
+        <H3 style={styles.heading}>Welcome to Pic Bucket</H3>
         <Form>
           <Item rounded style={styles.formItem}>
             <Input

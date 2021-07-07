@@ -1,79 +1,105 @@
 /* eslint-disable prettier/prettier */
 import React, {useState} from 'react';
+
 import {StyleSheet} from 'react-native';
+import {Container, Text, Button, H3, ActionSheet, Root} from 'native-base';
+
+import Snackbar from 'react-native-snackbar';
+import ProgressBar from 'react-native-progress/Bar';
+
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 import storage from '@react-native-firebase/storage';
 import database from '@react-native-firebase/database';
 
-import Snackbar from 'react-native-snackbar';
-
-import {Container, Text, Button, H3, ActionSheet, Root} from 'native-base';
-
-import ProgressBar from 'react-native-progress/Bar';
-import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
-
-import {imageOptions} from '../utils/option';
-
 import propTypes from 'prop-types';
 import {connect} from 'react-redux';
 
-const ImageUploader = ({userState, navigation}) => {
-  const [imageUploading, setImageUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState(null);
+import {videoOptions} from '../../utils/option';
 
-  const chooseImage = async type => {
+const BUTTON_OPTIONS = ['Shoot a video', 'Cancel'];
+
+const VideoUploader = ({userState, navigation}) => {
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState(null);
+  const [textAnimation, setTextAnimation] = useState(0);
+
+  const chooseVideo = async type => {
+    /**
+     * Imagepicker doesnt support "medium" video quality
+     * for android so kept it "low" in videoOptions
+     */
     if (type === 'CAMERA') {
-      launchCamera(imageOptions, response => {
+      launchCamera(videoOptions, response => {
         if (response.didCancel) {
-          console.log('User cancelled image picker');
+          console.log('User cancelled Video picker');
         } else if (response.error) {
-          console.log('ImagePicker Error: ', response.error);
+          console.log('VideoPicker Error: ', response.error);
         } else if (response.customButton) {
           console.log('User tapped custom button: ', response.customButton);
         } else {
-          uploadImage(response);
+          uploadVideo(response);
         }
       });
     } else {
-      launchImageLibrary(imageOptions, response => {
+      launchImageLibrary(videoOptions, response => {
         if (response.didCancel) {
-          console.log('User cancelled image picker');
+          console.log('User cancelled video picker');
         } else if (response.error) {
           console.log('ImagePicker Error: ', response.error);
         } else if (response.customButton) {
           console.log('User tapped custom button: ', response.customButton);
         } else {
-          uploadImage(response);
+          uploadVideo(response);
         }
       });
     }
   };
 
-  const uploadImage = async response => {
-    setImageUploading(true);
+  const uploadVideo = async response => {
+    setVideoUploading(true);
     try {
+      /**
+       * To keep firebase storage bucket segregated create unique
+       * folders for each user
+       */
       const reference = storage().ref(
         `user/${userState.user.uid}/` + response.assets[0].fileName,
       );
+
       const task = reference.putFile(response.assets[0].uri);
+
       task.on('state_changed', taskSnapshot => {
+        /**
+         * This event will get execute everytime
+         * there's upload progress
+         */
         const percentage =
           (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) * 100;
+
         setUploadStatus(percentage);
       });
 
       task.then(async () => {
         const url = await reference.getDownloadURL();
+        /**
+         * Once video is uploaded on storage bucket
+         * Store that video in database with respective user
+         * by adding videos["urls"] as an array field in user object
+         */
         await database()
-          .ref(`/users/${userState.user.uid}/images`)
+          .ref(`/users/${userState.user.uid}/videos`)
           .set({
-            urls: userState.user.images
-              ? [url, ...userState.user.images.urls]
+            urls: userState.user.videos
+              ? [url, ...userState.user.videos.urls]
               : [url],
+          })
+          .then(() => {
+            setVideoUploading(false);
           });
-        setImageUploading(false);
+
         Snackbar.show({
-          text: 'Image uploaded successfully.',
+          text: 'Video uploaded successfully.',
           textColor: 'white',
           backgroundColor: 'green',
         });
@@ -84,11 +110,28 @@ const ImageUploader = ({userState, navigation}) => {
     }
   };
 
+  if (videoUploading) {
+    /**
+     * Uploading... text animation
+     */
+    setTimeout(() => {
+      if (textAnimation < 3) {
+        setTextAnimation(textAnimation + 1);
+      } else {
+        setTextAnimation(0);
+      }
+    }, 500);
+  }
+
   return (
     <Root>
       <Container style={styles.container}>
-        <H3 style={styles.heading}>Upload an image</H3>
-        {imageUploading ? (
+        <H3 style={styles.heading}>
+          {videoUploading
+            ? 'Uploading' + '.'.repeat(textAnimation)
+            : 'Upload a video'}
+        </H3>
+        {videoUploading ? (
           <>
             <Text
               style={{
@@ -103,28 +146,24 @@ const ImageUploader = ({userState, navigation}) => {
           </>
         ) : (
           <Button
-            style={styles.formButton}
+            style={styles.uploadButton}
             rounded
             block
             onPress={() => {
               ActionSheet.show(
                 {
-                  options: ['Click an image', 'Upload from gallery', 'Cancel'],
-                  cancelButtonIndex: 2,
-                  title: 'Choose an image',
+                  options: BUTTON_OPTIONS,
+                  cancelButtonIndex: 1,
+                  title: 'Upload options',
                 },
                 buttonIndex => {
                   if (buttonIndex === 0) {
-                    chooseImage('CAMERA');
-                  } else if (buttonIndex === 1) {
-                    chooseImage('GALLERY');
+                    chooseVideo('CAMERA');
                   }
                 },
               );
             }}>
-            <Text style={{fontWeight: 'bold'}}>
-              {imageUploading ? 'Uploading please wait...' : 'Choose image'}
-            </Text>
+            <Text style={{fontWeight: 'bold'}}>Choose a video</Text>
           </Button>
         )}
       </Container>
@@ -136,11 +175,11 @@ const mapStateToProps = state => ({
   userState: state.auth,
 });
 
-ImageUploader.propTypes = {
+VideoUploader.propTypes = {
   userState: propTypes.object.isRequired,
 };
 
-export default connect(mapStateToProps)(ImageUploader);
+export default connect(mapStateToProps)(VideoUploader);
 
 const styles = StyleSheet.create({
   container: {
@@ -157,22 +196,13 @@ const styles = StyleSheet.create({
     padding: 15,
     marginTop: 20,
   },
-  image: {
-    width: '80%',
-    height: 200,
-    alignSelf: 'center',
-    marginTop: 35,
-    borderRadius: 10,
-    borderColor: 'white',
-    borderWidth: 2,
-  },
   progress: {
     width: '100%',
     marginBottom: 20,
     marginLeft: 10,
     marginRight: 10,
   },
-  formButton: {
+  uploadButton: {
     backgroundColor: '#873EA8',
     width: '100%',
   },

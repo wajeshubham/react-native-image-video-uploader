@@ -1,26 +1,32 @@
 /* eslint-disable prettier/prettier */
 import React, {useEffect} from 'react';
 import 'react-native-gesture-handler';
+
+// firebase
 import auth from '@react-native-firebase/auth';
 import database from '@react-native-firebase/database';
+
 import {requestPermission} from './utils/AskPermission';
 
-import {SET_USER, IS_AUTHENTICATED, SET_LOADER} from './action/action.types';
+import {SET_USER, IS_AUTHENTICATED} from './action/action.types';
 
-import CustomHeader from './layout/CustomHeader';
-
+// Navigation & redux
 import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {connect, useDispatch} from 'react-redux';
-import {View, Text} from 'react-native';
-import SignUp from './screens/Signup';
-import SignIn from './screens/Signin';
-import Landing from './screens/Landing';
-import ImageUploader from './screens/ImageUploader';
-import VideoUploader from './screens/VideoUploader';
-import VideoPlayer from './screens/VideoPlayer';
-import ImageView from './screens/ImageView';
+
 import {Spinner} from 'native-base';
+
+import CustomHeader from './layout/CustomHeader';
+
+// Screens
+import SignUp from './screens/auth-screens/Signup';
+import SignIn from './screens/auth-screens/Signin';
+import Landing from './screens/Landing';
+import ImageUploader from './screens/upload-screens/ImageUploader';
+import VideoUploader from './screens/upload-screens/VideoUploader';
+import VideoPlayer from './screens/display-screens/VideoPlayer';
+import ImageView from './screens/display-screens/ImageView';
 
 const Stack = createStackNavigator();
 
@@ -32,6 +38,9 @@ const App = ({authState}) => {
       database()
         .ref(`/users/${user._user.uid}`)
         .on('value', snapshot => {
+          /**
+           * dispatch authenticated use and set it to the global state
+           * */
           dispatch({
             type: SET_USER,
             payload: snapshot.val(),
@@ -50,6 +59,10 @@ const App = ({authState}) => {
   };
 
   useEffect(() => {
+    /**
+     * Ask user permissions about storage
+     * if he/she hasn't accepted already
+     */
     requestPermission();
     const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
     return subscriber;
@@ -66,6 +79,7 @@ const App = ({authState}) => {
             marginTop: 'auto',
             marginBottom: 'auto',
             zIndex: 100,
+            backgroundColor: '#262626',
           }}
         />
       ) : null}

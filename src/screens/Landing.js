@@ -1,5 +1,6 @@
 /* eslint-disable prettier/prettier */
-import React from 'react';
+import React, {useState} from 'react';
+
 import {
   StyleSheet,
   Text,
@@ -9,40 +10,38 @@ import {
   View,
   TouchableWithoutFeedback,
 } from 'react-native';
-
-import {Container, Button, H3} from 'native-base';
+import {Container, Button, H3, Spinner, Icon} from 'native-base';
+import Video from 'react-native-video';
 
 import propTypes from 'prop-types';
 import {connect} from 'react-redux';
-import Video from 'react-native-video';
 
 let screenWidth = Dimensions.get('window').width;
 
 const Landing = ({userState, navigation}) => {
+  const [buffering, setBuffering] = useState(undefined);
+
   return (
     <Container style={styles.container}>
       <ScrollView
         contentContainerStyle={{flexGrow: 1}}
         style={{width: '100%'}}
         showsVerticalScrollIndicator={false}>
-        <H3 style={styles.heading}>Welcome</H3>
+        <H3 style={styles.heading}>Welcome to home</H3>
+
         <Button
           style={styles.landingPageBtn}
           rounded
           block
           onPress={() => navigation.navigate('ImageUploader')}>
-          <Text style={{fontWeight: 'bold', color: 'white', fontSize: 20}}>
-            Upload an Image
-          </Text>
+          <Text style={styles.uploadBtnText}>Upload an Image</Text>
         </Button>
         <Button
           style={styles.landingPageBtn}
           rounded
           block
           onPress={() => navigation.navigate('VideoUploader')}>
-          <Text style={{fontWeight: 'bold', color: 'white', fontSize: 20}}>
-            Upload a Video
-          </Text>
+          <Text style={styles.uploadBtnText}>Upload a Video</Text>
         </Button>
 
         <H3 style={styles.heading}>My Images</H3>
@@ -53,28 +52,33 @@ const Landing = ({userState, navigation}) => {
           <ScrollView
             horizontal={true}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{flexGrow: 1}}>
+            contentContainerStyle={{flexGrow: 1}}
+            style={{marginBottom: 35}}>
             {userState.user.images.urls.map((src, i) => {
               return (
-                <View key={i} style={styles.productScrollView}>
+                <View key={i} style={styles.itemContainer}>
                   <TouchableWithoutFeedback
                     onPress={() => navigation.navigate('ImageView', {url: src})}
                     key={i}>
                     <Image key={i} source={{uri: src}} style={styles.image} />
                   </TouchableWithoutFeedback>
+                  <Icon style={styles.resizeBtn} name={'resize'} />
                 </View>
               );
             })}
           </ScrollView>
         ) : (
-          <View style={styles.noImagesView}>
-            <Text style={{color: 'white', fontSize: 20}}>
+          <View style={styles.noItemsView}>
+            <Text style={{color: 'grey', fontSize: 20}}>
               No images were added
             </Text>
           </View>
         )}
 
         <H3 style={styles.heading}>My Videos</H3>
+
+        {buffering ? <Spinner /> : null}
+
         {userState.user &&
         userState.user.videos &&
         userState.user.videos.urls.length > 0 ? (
@@ -84,32 +88,39 @@ const Landing = ({userState, navigation}) => {
             contentContainerStyle={{flexGrow: 1}}>
             {userState.user.videos.urls.map((src, i) => {
               return (
-                <View key={i} style={styles.productScrollView}>
-                  <TouchableWithoutFeedback
-                    onPress={() =>
-                      navigation.navigate('VideoPlayer', {url: src})
-                    }
-                    key={i}>
-                    <Video
-                      source={{uri: src}}
-                      style={{
-                        width: '80%',
-                        height: 300,
-                        borderRadius: 10,
-                        alignSelf: 'center',
-                        marginBottom: 20,
-                      }}
-                      controls={false}
-                      resizeMode="cover"
-                    />
-                  </TouchableWithoutFeedback>
+                <View key={i} style={styles.itemContainer}>
+                  <Video
+                    source={{uri: src}}
+                    style={{
+                      ...styles.video,
+                      height: buffering ? 0 : 300,
+                      borderWidth: buffering ? 0 : 2,
+                    }}
+                    controls={false}
+                    resizeMode="cover"
+                    onLoadStart={() => {
+                      setBuffering(true);
+                    }}
+                    onLoad={() => {
+                      setBuffering(undefined);
+                    }}
+                    muted={true}
+                  />
+                  {!buffering && (
+                    <TouchableWithoutFeedback
+                      onPress={() =>
+                        navigation.navigate('VideoPlayer', {url: src})
+                      }>
+                      <Icon style={styles.playBtn} name={'play'} />
+                    </TouchableWithoutFeedback>
+                  )}
                 </View>
               );
             })}
           </ScrollView>
         ) : (
-          <View style={styles.noImagesView}>
-            <Text style={{color: 'white', fontSize: 20}}>
+          <View style={styles.noItemsView}>
+            <Text style={{color: 'grey', fontSize: 20}}>
               No videos were added
             </Text>
           </View>
@@ -135,7 +146,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: 10,
+    paddingHorizontal: 10,
   },
   heading: {
     fontSize: 32,
@@ -152,30 +163,63 @@ const styles = StyleSheet.create({
     borderColor: 'white',
     borderWidth: 2,
   },
-  progress: {
-    width: '100%',
+  video: {
+    width: '80%',
+    alignSelf: 'center',
     marginBottom: 20,
-    marginLeft: 10,
-    marginRight: 10,
+    borderRadius: 10,
+    borderColor: 'white',
   },
   landingPageBtn: {
     backgroundColor: '#873EA8',
     width: '100%',
     marginBottom: 20,
   },
-  productScrollView: {
+  itemContainer: {
     display: 'flex',
-    justifyContent: 'space-between',
     width: screenWidth,
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginLeft: -35,
     marginRight: -25,
   },
-  noImagesView: {
+  noItemsView: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     textAlign: 'center',
     flexGrow: 1,
+    borderWidth: 2,
+    borderColor: 'grey',
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  uploadBtnText: {fontWeight: 'bold', color: 'white', fontSize: 20},
+  playBtn: {
+    color: 'white',
+    fontSize: 40,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    textAlign: 'center',
+    height: 80,
+    paddingTop: 18,
+    position: 'absolute',
+    top: '33%',
+    borderRadius: 100,
+    width: 80,
+    alignSelf: 'center',
+  },
+  resizeBtn: {
+    color: 'white',
+    fontSize: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    textAlign: 'center',
+    height: 30,
+    position: 'absolute',
+    top: 5,
+    right: 50,
+    borderRadius: 100,
+    width: 30,
+    alignSelf: 'center',
+    paddingTop: 4,
+    paddingLeft: 2,
   },
 });

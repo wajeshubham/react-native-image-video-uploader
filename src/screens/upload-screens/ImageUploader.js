@@ -12,23 +12,25 @@ import {Container, Text, Button, H3, ActionSheet, Root} from 'native-base';
 import ProgressBar from 'react-native-progress/Bar';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
-import {videoOptions} from '../utils/option';
+import {imageOptions} from '../../utils/option';
 
 import propTypes from 'prop-types';
 import {connect} from 'react-redux';
-import {requestPermission} from '../utils/AskPermission';
 
-const VideoUploader = ({userState, navigation}) => {
-  const [videoUploading, setVideoUploading] = useState(false);
+const BUTTON_OPTIONS = ['Click an image', 'Upload from gallery', 'Cancel'];
+
+const ImageUploader = ({userState, navigation}) => {
+  const [imageUploading, setImageUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
+  const [textAnimation, setTextAnimation] = useState(0);
 
   const chooseImage = async type => {
     if (type === 'CAMERA') {
-      launchCamera(videoOptions, response => {
+      launchCamera(imageOptions, response => {
         if (response.didCancel) {
-          console.log('User cancelled Video picker');
+          console.log('User cancelled image picker');
         } else if (response.error) {
-          console.log('VideoPicker Error: ', response.error);
+          console.log('ImagePicker Error: ', response.error);
         } else if (response.customButton) {
           console.log('User tapped custom button: ', response.customButton);
         } else {
@@ -36,7 +38,7 @@ const VideoUploader = ({userState, navigation}) => {
         }
       });
     } else {
-      launchImageLibrary(videoOptions, response => {
+      launchImageLibrary(imageOptions, response => {
         if (response.didCancel) {
           console.log('User cancelled image picker');
         } else if (response.error) {
@@ -51,31 +53,44 @@ const VideoUploader = ({userState, navigation}) => {
   };
 
   const uploadImage = async response => {
-    setVideoUploading(true);
-    console.log(response, '///////////');
+    setImageUploading(true);
     try {
+      /**
+       * To keep firebase storage bucket segregated create unique
+       * folders for each user
+       */
       const reference = storage().ref(
         `user/${userState.user.uid}/` + response.assets[0].fileName,
       );
       const task = reference.putFile(response.assets[0].uri);
       task.on('state_changed', taskSnapshot => {
+        /**
+         * This event will get execute everytime
+         * there's an upload progress
+         */
         const percentage =
           (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) * 100;
+
         setUploadStatus(percentage);
       });
 
       task.then(async () => {
         const url = await reference.getDownloadURL();
+        /**
+         * Once image is uploaded on storage bucket
+         * Store that image in database with respective user
+         * by adding images["urls"] as an array field in user object
+         */
         await database()
-          .ref(`/users/${userState.user.uid}/videos`)
+          .ref(`/users/${userState.user.uid}/images`)
           .set({
-            urls: userState.user.videos
-              ? [url, ...userState.user.videos.urls]
+            urls: userState.user.images
+              ? [url, ...userState.user.images.urls]
               : [url],
           });
-        setVideoUploading(false);
+        setImageUploading(false);
         Snackbar.show({
-          text: 'Video uploaded successfully.',
+          text: 'Image uploaded successfully.',
           textColor: 'white',
           backgroundColor: 'green',
         });
@@ -86,11 +101,28 @@ const VideoUploader = ({userState, navigation}) => {
     }
   };
 
+  if (imageUploading) {
+    /**
+     * Uploading... text animation
+     */
+    setTimeout(() => {
+      if (textAnimation < 3) {
+        setTextAnimation(textAnimation + 1);
+      } else {
+        setTextAnimation(0);
+      }
+    }, 500);
+  }
+
   return (
     <Root>
       <Container style={styles.container}>
-        <H3 style={styles.heading}>Upload a video</H3>
-        {videoUploading ? (
+        <H3 style={styles.heading}>
+          {imageUploading
+            ? 'Uploading' + '.'.repeat(textAnimation)
+            : 'Upload an image'}
+        </H3>
+        {imageUploading ? (
           <>
             <Text
               style={{
@@ -111,9 +143,9 @@ const VideoUploader = ({userState, navigation}) => {
             onPress={() => {
               ActionSheet.show(
                 {
-                  options: ['Shoot a video', 'Upload from gallery', 'Cancel'],
+                  options: BUTTON_OPTIONS,
                   cancelButtonIndex: 2,
-                  title: 'Upload options',
+                  title: 'Choose an image',
                 },
                 buttonIndex => {
                   if (buttonIndex === 0) {
@@ -125,7 +157,7 @@ const VideoUploader = ({userState, navigation}) => {
               );
             }}>
             <Text style={{fontWeight: 'bold'}}>
-              {videoUploading ? 'Uploading please wait...' : 'Choose video'}
+              {imageUploading ? 'Uploading please wait...' : 'Choose image'}
             </Text>
           </Button>
         )}
@@ -138,11 +170,11 @@ const mapStateToProps = state => ({
   userState: state.auth,
 });
 
-VideoUploader.propTypes = {
+ImageUploader.propTypes = {
   userState: propTypes.object.isRequired,
 };
 
-export default connect(mapStateToProps)(VideoUploader);
+export default connect(mapStateToProps)(ImageUploader);
 
 const styles = StyleSheet.create({
   container: {
