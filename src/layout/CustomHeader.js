@@ -3,7 +3,7 @@
 import React from 'react';
 import {StyleSheet, Image} from 'react-native';
 import {Header, Right, H3, Left, Icon} from 'native-base';
-import logo from '../assets/logo-white.png';
+import logo from '../assets/logo.png';
 
 import {connect} from 'react-redux';
 import propTypes from 'prop-types';
@@ -22,7 +22,7 @@ const CustomHeader = ({navigation, authState, signOut}) => {
             <Icon name="arrow-back" style={{color: '#fff'}} />
           </TouchableOpacity>
         ) : (
-          <Image source={logo} style={styles.headerImage} />
+          <Image source={logo} style={styles.logo} />
         )}
       </Left>
       <Right>
@@ -56,8 +56,8 @@ CustomHeader.prototypes = {
 export default connect(mapStateToProps, mapDispatchToProps)(CustomHeader);
 
 const styles = StyleSheet.create({
-  headerImage: {
-    width: 50,
-    height: 50,
+  logo: {
+    width: 40,
+    height: 40,
   },
 });

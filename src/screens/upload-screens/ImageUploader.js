@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import React, {useState} from 'react';
-import {StyleSheet} from 'react-native';
+import {Dimensions, StyleSheet} from 'react-native';
 
 import storage from '@react-native-firebase/storage';
 import database from '@react-native-firebase/database';
@@ -18,6 +18,7 @@ import propTypes from 'prop-types';
 import {connect} from 'react-redux';
 
 const BUTTON_OPTIONS = ['Click an image', 'Upload from gallery', 'Cancel'];
+const screenWidth = Dimensions.get('window').width;
 
 const ImageUploader = ({userState, navigation}) => {
   const [imageUploading, setImageUploading] = useState(false);
@@ -131,9 +132,16 @@ const ImageUploader = ({userState, navigation}) => {
                 fontSize: 15,
                 marginBottom: 10,
               }}>
-              {Math.floor(uploadStatus) || 0}% done please wait...
+              {Math.floor(uploadStatus) || 0}% done{' '}
+              {Math.floor(uploadStatus) >= 100
+                ? 'working on it...'
+                : 'please wait...'}
             </Text>
-            <ProgressBar progress={uploadStatus} style={styles.progress} />
+            <ProgressBar
+              progress={(Math.floor(uploadStatus) || 0) / 100}
+              color={'#873EA8'}
+              width={screenWidth - 50}
+            />
           </>
         ) : (
           <Button
@@ -199,12 +207,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderColor: 'white',
     borderWidth: 2,
-  },
-  progress: {
-    width: '100%',
-    marginBottom: 20,
-    marginLeft: 10,
-    marginRight: 10,
   },
   formButton: {
     backgroundColor: '#873EA8',

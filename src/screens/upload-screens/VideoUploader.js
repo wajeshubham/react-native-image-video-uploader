@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import React, {useState} from 'react';
 
-import {StyleSheet} from 'react-native';
+import {Dimensions, StyleSheet} from 'react-native';
 import {Container, Text, Button, H3, ActionSheet, Root} from 'native-base';
 
 import Snackbar from 'react-native-snackbar';
@@ -18,6 +18,7 @@ import {connect} from 'react-redux';
 import {videoOptions} from '../../utils/option';
 
 const BUTTON_OPTIONS = ['Shoot a video', 'Cancel'];
+const screenWidth = Dimensions.get('window').width;
 
 const VideoUploader = ({userState, navigation}) => {
   const [videoUploading, setVideoUploading] = useState(false);
@@ -140,9 +141,16 @@ const VideoUploader = ({userState, navigation}) => {
                 fontSize: 15,
                 marginBottom: 10,
               }}>
-              {Math.floor(uploadStatus) || 0}% done please wait...
+              {Math.floor(uploadStatus) || 0}% done{' '}
+              {Math.floor(uploadStatus) >= 100
+                ? 'working on it...'
+                : 'please wait...'}
             </Text>
-            <ProgressBar progress={uploadStatus} style={styles.progress} />
+            <ProgressBar
+              progress={(Math.floor(uploadStatus) || 0) / 100}
+              color={'#873EA8'}
+              width={screenWidth - 50}
+            />
           </>
         ) : (
           <Button

@@ -12,7 +12,7 @@ import {
   H3,
   Spinner,
 } from 'native-base';
-import logo from '../../assets/logo-white.png';
+import logo from '../../assets/logo.png';
 import propTypes from 'prop-types';
 import {connect, useDispatch} from 'react-redux';
 import {signUp} from '../../action/auth';

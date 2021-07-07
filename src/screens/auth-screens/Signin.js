@@ -3,7 +3,7 @@ import {StyleSheet, ScrollView, Image, TouchableOpacity} from 'react-native';
 import Snackbar from 'react-native-snackbar';
 
 import {Container, Form, Item, Input, Text, Button, H3} from 'native-base';
-import logo from '../../assets/logo-white.png';
+import logo from '../../assets/logo.png';
 import propTypes from 'prop-types';
 import {connect, useDispatch} from 'react-redux';
 import {signIn} from '../../action/auth';
