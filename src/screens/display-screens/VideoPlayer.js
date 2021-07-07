@@ -8,14 +8,15 @@ import Video from 'react-native-video';
 const VideoPlayer = ({route}) => {
   const {url} = route.params;
   const [buffering, setBuffering] = useState(undefined);
-
   return (
     <>
       {buffering ? <Spinner style={styles.spinner} /> : null}
 
       <Container style={styles.container}>
         <Video
-          source={{uri: url}}
+          source={{
+            uri: url,
+          }}
           style={styles.videoPlayer}
           controls={true}
           fullscreen={true}

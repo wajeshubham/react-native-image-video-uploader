@@ -31,7 +31,7 @@ const VideoUploader = ({userState, navigation}) => {
      * for android so kept it "low" in videoOptions
      */
     if (type === 'CAMERA') {
-      launchCamera(videoOptions, response => {
+      launchCamera(videoOptions, async response => {
         if (response.didCancel) {
           console.log('User cancelled Video picker');
         } else if (response.error) {
@@ -39,11 +39,11 @@ const VideoUploader = ({userState, navigation}) => {
         } else if (response.customButton) {
           console.log('User tapped custom button: ', response.customButton);
         } else {
-          uploadVideo(response);
+          await uploadVideo(response);
         }
       });
     } else {
-      launchImageLibrary(videoOptions, response => {
+      launchImageLibrary(videoOptions, async response => {
         if (response.didCancel) {
           console.log('User cancelled video picker');
         } else if (response.error) {
@@ -51,7 +51,7 @@ const VideoUploader = ({userState, navigation}) => {
         } else if (response.customButton) {
           console.log('User tapped custom button: ', response.customButton);
         } else {
-          uploadVideo(response);
+          await uploadVideo(response);
         }
       });
     }
@@ -60,14 +60,7 @@ const VideoUploader = ({userState, navigation}) => {
   const uploadVideo = async response => {
     setVideoUploading(true);
     try {
-      /**
-       * To keep firebase storage bucket segregated create unique
-       * folders for each user
-       */
-      const reference = storage().ref(
-        `user/${userState.user.uid}/` + response.assets[0].fileName,
-      );
-
+      const reference = storage().ref(response.assets[0].fileName);
       const task = reference.putFile(response.assets[0].uri);
 
       task.on('state_changed', taskSnapshot => {
@@ -88,6 +81,7 @@ const VideoUploader = ({userState, navigation}) => {
          * Store that video in database with respective user
          * by adding videos["urls"] as an array field in user object
          */
+
         await database()
           .ref(`/users/${userState.user.uid}/videos`)
           .set({

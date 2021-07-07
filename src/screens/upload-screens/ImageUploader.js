@@ -56,12 +56,8 @@ const ImageUploader = ({userState, navigation}) => {
   const uploadImage = async response => {
     setImageUploading(true);
     try {
-      /**
-       * To keep firebase storage bucket segregated create unique
-       * folders for each user
-       */
       const reference = storage().ref(
-        `user/${userState.user.uid}/` + response.assets[0].fileName,
+        `user/images/` + response.assets[0].fileName,
       );
       const task = reference.putFile(response.assets[0].uri);
       task.on('state_changed', taskSnapshot => {

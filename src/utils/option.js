@@ -18,5 +18,4 @@ export const videoOptions = {
     path: 'videos',
   },
   videoQuality: 'low',
-  durationLimit: 60,
 };
